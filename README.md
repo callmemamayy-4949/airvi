@@ -2,7 +2,7 @@
 
 AirVision is a Railway-ready web app for evaluating automotive evaporator coil cleanliness from Before/After images.
 
-The image analysis runs in the browser with a Teachable Machine Image Model embedded in `public/index.html`. It does not use Gemini or any external AI API key.
+The image analysis runs in the browser with a Teachable Machine Image Model stored in `public/my_model/`. It does not use Gemini, webcam capture, or any external AI API key.
 
 ## App Flow
 
@@ -13,7 +13,8 @@ The image analysis runs in the browser with a Teachable Machine Image Model embe
 
 ## Railway Structure
 
-- `public/index.html` - full AirVision frontend, UI, embedded model, signature, PDF generation
+- `public/index.html` - full AirVision frontend, upload flow, signature, PDF generation
+- `public/my_model/` - Teachable Machine files: `model.json`, `metadata.json`, `model.weights.bin`
 - `server.js` - Railway/Node backend for saving reports
 - `package.json` - Railway start command via `npm start`
 
