@@ -5,7 +5,12 @@ const port = process.env.PORT || 3000;
 
 app.use(express.static("public", {
   etag: true,
-  maxAge: process.env.NODE_ENV === "production" ? "1h" : 0
+  maxAge: 0,
+  setHeaders(res, filePath) {
+    if (filePath.endsWith(".html")) {
+      res.setHeader("Cache-Control", "no-store");
+    }
+  }
 }));
 
 app.get("/health", (_req, res) => {
@@ -13,13 +18,15 @@ app.get("/health", (_req, res) => {
 });
 
 app.post("/api/reports", (_req, res) => {
-  res.status(501).json({
-    success: false,
-    error: "Google Sheet saving is not enabled yet. PDF download runs in the browser."
+  res.json({
+    success: true,
+    skipped: true,
+    message: "PDF download only. Google Sheet saving is disabled for now."
   });
 });
 
 app.use((_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   res.sendFile("index.html", { root: "public" });
 });
 
