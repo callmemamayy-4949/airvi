@@ -835,7 +835,7 @@
       const car = currentInfo();
       isSaving = true;
       btn.disabled = true;
-      btn.textContent = 'กำลังบันทึกข้อมูล...';
+      btn.textContent = 'กำลังสร้าง PDF...';
 
       try {
         await ensureScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
@@ -864,45 +864,9 @@
         }
 
         const fileName = `AirVision_Report_${car.plate || 'NoPlate'}.pdf`;
-        const pdfBase64 = pdf.output('datauristring');
-        const payload = {
-          reportId: Math.random().toString(36).substring(2, 10).toUpperCase(),
-          carInfo: car,
-          beforeImage,
-          afterImage,
-          beforeResult,
-          afterResult,
-          beforeScore: beforeResult.score,
-          afterScore: afterResult.score,
-          signature,
-          pdfBase64,
-          fileName
-        };
-
-        let response;
-        if (window.google && google.script && google.script.run) {
-          response = await new Promise((resolve, reject) => {
-            google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).saveInspectionReport(payload);
-          });
-        } else {
-          const apiResponse = await fetch('/api/reports', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          response = await apiResponse.json().catch(() => null);
-          if (!apiResponse.ok) {
-            throw new Error(response && response.error ? response.error : 'บันทึกข้อมูลไม่สำเร็จ');
-          }
-        }
-
-        if (!response || !response.success) {
-          throw new Error(response && response.error ? response.error : 'บันทึกข้อมูลไม่สำเร็จ');
-        }
-
         pdf.save(fileName);
       } catch (error) {
-        alert('ไม่สามารถสร้าง PDF หรือบันทึกข้อมูลได้: ' + error.message);
+        alert('ไม่สามารถสร้าง PDF ได้: ' + error.message);
       } finally {
         isSaving = false;
         btn.disabled = false;

@@ -9,68 +9,29 @@ The image analysis runs in the browser with a Teachable Machine Image Model stor
 1. Customer/car details and Before/After image upload
 2. Processing screen that loads the Teachable Machine model only after analysis starts
 3. Before/After result screen with customer signature
-4. Inspection report screen with PDF download and report save
+4. Inspection report screen with local PDF download
 
 ## Railway Structure
 
 - `public/index.html` - full AirVision frontend, upload flow, signature, PDF generation
 - `public/my_model/` - Teachable Machine files: `model.json`, `metadata.json`, `model.weights.bin`
-- `server.js` - Railway/Node backend for saving reports
+- `server.js` - Railway/Node static server and healthcheck
 - `package.json` - Railway start command via `npm start`
 
-The frontend keeps the old Apps Script path when available:
+The PDF is generated and downloaded in the browser. Google Sheet/Drive saving is intentionally disabled for now and can be added later.
 
-```js
-google.script.run.saveInspectionReport(payload)
-```
+## Future Google Storage
 
-On Railway it uses:
-
-```http
-POST /api/reports
-```
-
-## Google Storage
-
-Defaults are already configured in `server.js`:
+These IDs are reserved for a future Google Sheet/Drive integration:
 
 - Google Sheet ID: `1ZifJc-xHbEPDWbwdiSTnTc0M2Mvn6Exo4U4s8UEdHG4`
 - Drive Folder ID: `12EQ4sDdlrApVL3KMQLAfIHCRsXgpksO1`
 - Sheet tab: `AirVision Reports`
 
-If the sheet tab does not exist, the backend creates it. If it exists, new reports are appended.
-
 Header row:
 
 ```text
 วันที่ | ชื่อ | เบอร์โทร | ยี่ห้อ | รุ่น | ทะเบียน | ก่อน | หลัง | รายงาน | Before | After
-```
-
-## Railway Environment Variables
-
-Create a Google Cloud service account, then share both the Google Sheet and the Drive folder with the service account email.
-
-Set one of these credential options in Railway.
-
-Option A:
-
-```env
-GOOGLE_SERVICE_ACCOUNT_JSON_BASE64=...
-```
-
-Option B:
-
-```env
-GOOGLE_SERVICE_ACCOUNT_EMAIL=...
-GOOGLE_PRIVATE_KEY=...
-```
-
-Optional overrides:
-
-```env
-SHEET_ID=1ZifJc-xHbEPDWbwdiSTnTc0M2Mvn6Exo4U4s8UEdHG4
-DRIVE_FOLDER_ID=12EQ4sDdlrApVL3KMQLAfIHCRsXgpksO1
-SHEET_NAME=AirVision Reports
 ```
 
 ## Local Run
@@ -86,4 +47,4 @@ Open:
 http://localhost:3000
 ```
 
-Without Google service account env vars, the page can render and generate the PDF, but saving to Google Sheet/Drive will fail until credentials are configured.
+No Google credentials are required for the current version.
