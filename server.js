@@ -1,5 +1,4 @@
 import express from "express";
-import { google } from "googleapis";
 import { Readable } from "node:stream";
 
 const app = express();
@@ -44,6 +43,7 @@ app.listen(port, "0.0.0.0", () => {
 async function saveInspectionReport(data) {
   if (!data) throw new Error("Missing payload");
 
+  const { google } = await import("googleapis");
   const auth = getGoogleAuth();
   const drive = google.drive({ version: "v3", auth });
   const sheets = google.sheets({ version: "v4", auth });
