@@ -37,8 +37,8 @@ app.use((_req, res) => {
   res.sendFile("index.html", { root: "public" });
 });
 
-app.listen(port, () => {
-  console.log(`AirVision listening on port ${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`AirVision listening on 0.0.0.0:${port}`);
 });
 
 async function saveInspectionReport(data) {
