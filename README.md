@@ -1,31 +1,88 @@
-# WinkWink Teachable Machine Demo
+# AirVision
 
-หน้าเว็บนี้ใช้โมเดล Teachable Machine Image จาก:
+AirVision is a Railway-ready web app for evaluating automotive evaporator coil cleanliness from Before/After images.
 
-https://teachablemachine.withgoogle.com/models/gjm22PuJo/
+The image analysis runs in the browser with a Teachable Machine Image Model embedded in `public/index.html`. It does not use Gemini or any external AI API key.
 
-## วิธีใช้งาน
+## App Flow
 
-1. เปิด local server ในโฟลเดอร์นี้
+1. Customer/car details and Before/After image upload
+2. Processing screen that loads the Teachable Machine model only after analysis starts
+3. Before/After result screen with customer signature
+4. Inspection report screen with PDF download and report save
 
-   ```powershell
-   node -e "const http=require('http'),fs=require('fs'),path=require('path');const root=process.cwd();http.createServer((req,res)=>{const file=path.join(root,req.url==='/'?'index.html':decodeURIComponent(req.url));fs.readFile(file,(err,data)=>{if(err){res.writeHead(404);res.end('Not found');return;}res.writeHead(200,{'Content-Type':file.endsWith('.html')?'text/html; charset=utf-8':'application/octet-stream'});res.end(data);});}).listen(8000,()=>console.log('http://localhost:8000'));"
-   ```
+## Railway Structure
 
-2. เปิด `http://localhost:8000`
-3. กด `เริ่มสแกน`
-4. อนุญาตให้ browser ใช้กล้อง
+- `public/index.html` - full AirVision frontend, UI, embedded model, signature, PDF generation
+- `server.js` - Railway/Node backend for saving reports
+- `package.json` - Railway start command via `npm start`
 
-ผลลัพธ์จะแสดง class ที่มั่นใจที่สุด พร้อมเปอร์เซ็นต์ของทุก class ในโมเดล
+The frontend keeps the old Apps Script path when available:
 
-## โค้ดจาก Teachable Machine Export
+```js
+google.script.run.saveInspectionReport(payload)
+```
 
-โค้ดตัวอย่างที่ได้จากโมเดลถูกบันทึกไว้ในโฟลเดอร์:
+On Railway it uses:
 
-`นี่โมเดลจ้าาาา/index.html`
+```http
+POST /api/reports
+```
 
-ถ้าต้องการใช้เวอร์ชันนี้ ให้วางไฟล์โมเดลที่ export มาไว้ใน:
+## Google Storage
 
-`นี่โมเดลจ้าาาา/my_model/`
+Defaults are already configured in `server.js`:
 
-โดยในโฟลเดอร์นั้นควรมี `model.json`, `metadata.json`, และไฟล์ weights `.bin`
+- Google Sheet ID: `1ZifJc-xHbEPDWbwdiSTnTc0M2Mvn6Exo4U4s8UEdHG4`
+- Drive Folder ID: `12EQ4sDdlrApVL3KMQLAfIHCRsXgpksO1`
+- Sheet tab: `AirVision Reports`
+
+If the sheet tab does not exist, the backend creates it. If it exists, new reports are appended.
+
+Header row:
+
+```text
+วันที่ | ชื่อ | เบอร์โทร | ยี่ห้อ | รุ่น | ทะเบียน | ก่อน | หลัง | รายงาน | Before | After
+```
+
+## Railway Environment Variables
+
+Create a Google Cloud service account, then share both the Google Sheet and the Drive folder with the service account email.
+
+Set one of these credential options in Railway.
+
+Option A:
+
+```env
+GOOGLE_SERVICE_ACCOUNT_JSON_BASE64=...
+```
+
+Option B:
+
+```env
+GOOGLE_SERVICE_ACCOUNT_EMAIL=...
+GOOGLE_PRIVATE_KEY=...
+```
+
+Optional overrides:
+
+```env
+SHEET_ID=1ZifJc-xHbEPDWbwdiSTnTc0M2Mvn6Exo4U4s8UEdHG4
+DRIVE_FOLDER_ID=12EQ4sDdlrApVL3KMQLAfIHCRsXgpksO1
+SHEET_NAME=AirVision Reports
+```
+
+## Local Run
+
+```powershell
+cmd /c npm install
+node server.js
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+Without Google service account env vars, the page can render and generate the PDF, but saving to Google Sheet/Drive will fail until credentials are configured.
