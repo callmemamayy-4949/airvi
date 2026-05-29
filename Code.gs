@@ -137,7 +137,7 @@ function dataUrlToBlob_(base64OrDataUrl, filename, fallbackMimeType) {
   let mimeType = fallbackMimeType || 'application/octet-stream';
   let base64 = value;
 
-  const match = value.match(/^data:([^;]+);base64,(.+)$/);
+  const match = value.match(/^data:([^;,]+)(?:;[^,]*)?;base64,(.+)$/);
   if (match) {
     mimeType = match[1] || mimeType;
     base64 = match[2];
