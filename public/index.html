@@ -840,28 +840,32 @@
       try {
         await ensureScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
         await ensureScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-        const canvas = await html2canvas($('report'), {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#fff'
-        });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-        const props = pdf.getImageProperties(imgData);
-        const width = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const height = props.height * width / props.width;
-        let heightLeft = height;
-        let position = 0;
-
-        pdf.addImage(imgData, 'PNG', 0, position, width, height);
-        heightLeft -= pageHeight;
-        while (heightLeft > 0) {
-          position = heightLeft - height;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, width, height);
-          heightLeft -= pageHeight;
+        const exportNode = prepareReportForPDF();
+        let canvas;
+        try {
+          canvas = await html2canvas(exportNode.clone, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: '#ffffff',
+            windowWidth: 1100,
+            windowHeight: exportNode.clone.scrollHeight,
+            scrollX: 0,
+            scrollY: 0
+          });
+        } finally {
+          exportNode.cleanup();
         }
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdfWidth = canvas.width / 2;
+        const pdfHeight = canvas.height / 2;
+        const pdf = new jspdf.jsPDF({
+          orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [pdfWidth, pdfHeight]
+        });
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
         const fileName = `AirVision_Report_${car.plate || 'NoPlate'}.pdf`;
         const pdfBase64 = pdf.output('datauristring');
@@ -889,6 +893,92 @@
         btn.disabled = false;
         btn.textContent = '⇩ ดาวน์โหลดรายงาน (PDF)';
       }
+    }
+
+    function prepareReportForPDF() {
+      const report = $('report');
+      if (!report) {
+        throw new Error('ไม่พบรายงานสำหรับสร้าง PDF');
+      }
+
+      const style = document.createElement('style');
+      style.textContent = `
+        .pdf-export-mode {
+          width: 1100px !important;
+          min-width: 1100px !important;
+          max-width: 1100px !important;
+          background: #ffffff !important;
+          transform: none !important;
+          transition: none !important;
+          animation: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+        .pdf-export-mode * {
+          transition: none !important;
+          animation: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+        .pdf-export-mode .pdf-before-after-grid,
+        .pdf-export-mode .pdf-summary-grid {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 36px !important;
+        }
+        .pdf-export-mode .pdf-certified-grid {
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 16px !important;
+        }
+        .pdf-export-mode .pdf-footer-row {
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: flex-end !important;
+          justify-content: space-between !important;
+        }
+        .pdf-export-mode img {
+          object-fit: cover !important;
+        }
+        .pdf-export-mode button,
+        .pdf-export-mode .pdf-actions,
+        .pdf-export-mode .report-actions {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+
+      const clone = report.cloneNode(true);
+      clone.id = 'report-pdf-export';
+      clone.classList.add('pdf-export-mode');
+      clone.style.width = '1100px';
+      clone.style.minWidth = '1100px';
+      clone.style.maxWidth = '1100px';
+
+      const grids = clone.querySelectorAll('.grid.grid-cols-1');
+      if (grids[0]) grids[0].classList.add('pdf-before-after-grid');
+      if (grids[1]) grids[1].classList.add('pdf-certified-grid');
+      if (grids[2]) grids[2].classList.add('pdf-summary-grid');
+
+      const footer = clone.querySelector('.border-t-2.border-black');
+      if (footer) footer.classList.add('pdf-footer-row');
+
+      const holder = document.createElement('div');
+      holder.style.position = 'fixed';
+      holder.style.left = '-10000px';
+      holder.style.top = '0';
+      holder.style.width = '1100px';
+      holder.style.background = '#ffffff';
+      holder.appendChild(clone);
+      document.body.appendChild(holder);
+
+      return {
+        clone,
+        cleanup() {
+          holder.remove();
+          style.remove();
+        }
+      };
     }
 
     function saveInspectionReport(payload) {
