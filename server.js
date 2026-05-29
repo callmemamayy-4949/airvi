@@ -2,6 +2,7 @@ import express from "express";
 
 const app = express();
 const port = process.env.PORT || 3000;
+const defaultAppsScriptUrl = "https://script.google.com/macros/s/AKfycbwulG6Xrfx7v_ECEYQrEHt7RhJy1uCGoWAJY1fVp5W75OU3LgU7C7PEBJGKIcUVzLIW/exec";
 
 app.use(express.static("public", {
   etag: true,
@@ -20,7 +21,7 @@ app.get("/health", (_req, res) => {
 app.use(express.json({ limit: process.env.MAX_JSON_SIZE || "35mb" }));
 
 app.post("/api/reports", async (req, res) => {
-  const appsScriptUrl = process.env.APPS_SCRIPT_WEB_APP_URL;
+  const appsScriptUrl = process.env.APPS_SCRIPT_WEB_APP_URL || defaultAppsScriptUrl;
   if (!appsScriptUrl) {
     res.status(501).json({
       success: false,
