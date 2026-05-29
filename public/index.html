@@ -864,14 +864,53 @@
         }
 
         const fileName = `AirVision_Report_${car.plate || 'NoPlate'}.pdf`;
+        const pdfBase64 = pdf.output('datauristring');
+        const response = await saveInspectionReport({
+          customerName: car.customerName,
+          phone: car.phone,
+          vehicleBrand: car.brand,
+          vehicleModel: car.model,
+          plateNo: car.plate,
+          beforeLevel: beforeResult.score,
+          afterLevel: afterResult.score,
+          beforeImage,
+          afterImage: afterImage || beforeImage,
+          pdfBase64
+        });
+        if (!response || !response.success) {
+          throw new Error(response && response.error ? response.error : 'บันทึกข้อมูลไม่สำเร็จ');
+        }
         pdf.save(fileName);
+        alert('บันทึกสำเร็จ');
       } catch (error) {
-        alert('ไม่สามารถสร้าง PDF ได้: ' + error.message);
+        alert('บันทึกไม่สำเร็จ: ' + error.message);
       } finally {
         isSaving = false;
         btn.disabled = false;
         btn.textContent = '⇩ ดาวน์โหลดรายงาน (PDF)';
       }
+    }
+
+    function saveInspectionReport(payload) {
+      if (window.google && google.script && google.script.run) {
+        return new Promise((resolve, reject) => {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .saveInspectionReport(payload);
+        });
+      }
+      return fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(body && body.error ? body.error : 'บันทึกข้อมูลไม่สำเร็จ');
+        }
+        return body;
+      });
     }
 
     try {

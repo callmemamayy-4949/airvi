@@ -17,12 +17,40 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "airvision" });
 });
 
-app.post("/api/reports", (_req, res) => {
-  res.json({
-    success: true,
-    skipped: true,
-    message: "PDF download only. Google Sheet saving is disabled for now."
-  });
+app.use(express.json({ limit: process.env.MAX_JSON_SIZE || "35mb" }));
+
+app.post("/api/reports", async (req, res) => {
+  const appsScriptUrl = process.env.APPS_SCRIPT_WEB_APP_URL;
+  if (!appsScriptUrl) {
+    res.status(501).json({
+      success: false,
+      error: "Missing APPS_SCRIPT_WEB_APP_URL"
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch(appsScriptUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body)
+    });
+    const text = await response.text();
+    const body = text ? JSON.parse(text) : null;
+    if (!response.ok || !body || !body.success) {
+      res.status(500).json({
+        success: false,
+        error: body && body.error ? body.error : "Apps Script save failed"
+      });
+      return;
+    }
+    res.json(body);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
 });
 
 app.use((_req, res) => {
